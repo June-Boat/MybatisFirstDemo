@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper   
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"  
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="cn.com.mybatis.mapper.UserMapper">
+	<!-- 开启二级缓存，配置cache -->
+	<cache type="org.mybatis.caches.ehcache.EhcacheCache" flushInterval="30000"/>
+	<resultMap type="user" id="userResultMap">
+		<id column="id_" property="id" />
+		<result column="username_" property="username" />
+		<result column="sex_" property="gender" />
+	</resultMap>
+
+	<!-- 使用resultMap的select查询 -->
+	<select id="findUserByResultmap" parameterType="int" resultMap="userResultMap">
+		select id id_,username username_,gender sex_ from user where id=#{id}
+	</select>
+
+	<!-- 普通select的查询 ：区分#{}和${}的不同 -->
+	<select id="findUserById" parameterType="int" resultType="user" flushCache="false">
+		select
+		* from user where id=#{id}
+	</select>
+	<select id="findUserByUsername" parameterType="java.lang.String"
+		resultType="user">
+		select * from user where username like '%${value}%'
+	</select>
+
+	<!-- 定义sql片段 -->
+	<!-- sql片段内，可以定义sql语句中任何部分 -->
+	<!-- sql片段内，最好不用将where和select关键字声明在内 -->
+	<sql id="whereClause">
+		<if test="userInstance!=null">
+			<if test="userInstance.gender!=null and userInstance.gender!=''">
+				and user.gender=#{userInstance.gender}
+			</if>
+			<if test="userInstance.username!=null and userInstance.username!=''">
+				and user.username like '%${userInstance.username}%'
+			</if>
+		</if>
+		<if test="idList!=null">
+			and id in
+			<foreach collection="idList" item="id" open="(" close=")"
+				separator=",">
+				#{id}
+			</foreach>
+		</if>
+	</sql>
+
+	<!-- 配置sql查询映射 -->
+	<select id="findUserList" parameterType="cn.com.mybatis.po.UserQueryInfo"
+		resultType="cn.com.mybatis.po.UserInstance">
+		select * from user
+		<where>
+			<include refid="whereClause"></include>
+		</where>
+	</select>
+
+	<!-- 配置hashmap类型查询 -->
+	<select id="findUserByHashmap" parameterType="hashmap"
+		resultType="user">
+		select * from user where id=#{id} and username like
+		'%${username}%'
+	</select>
+
+	<!-- 有返回id的insert语句 -->
+	<insert id="insertUser" parameterType="user">
+		<selectKey keyProperty="id" order="AFTER" resultType="java.lang.Integer">
+			select
+			LAST_INSERT_ID()
+		</selectKey>
+		insert into
+		user(username,password,gender,birthday,email,province,city)
+		value(#{username},#{password},#{gender},#{birthday,jdbcType=DATE},#{email},#{province},#{city})
+	</insert>
+
+	<!-- delete和update普通练习 -->
+	<delete id="deleteUser" parameterType="java.lang.Integer">
+		delete from user where
+		id=#{id}
+	</delete>
+	<update id="updateUserName" parameterType="user">
+		update user set
+		username=#{username} where id=#{id}
+	</update>
+</mapper>
+

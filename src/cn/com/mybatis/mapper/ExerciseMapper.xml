@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper   
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"  
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.com.mybatis.mapper.ExerciseMapper">
+	<cache/>
+	<!-- 二级缓存测试配置 -->
+	
+	<!-- 延迟加载 -->
+	<!-- 延迟加载的select -->
+	<select id="findCustomerById" parameterType="int" resultType="Customer">
+		select * from customer where cus_id=#{id}
+	</select>
+	
+	<!-- 延迟加载resultMap -->
+	<resultMap type="batchItems" id="BatchUserLazyLoadingResultMap">
+		<id property="batch_id" column="batch_id" />
+		<result property="cus_id" column="cus_id" />
+		<result property="number" column="number" />
+		<result property="createtime" column="createtime" />
+		<result property="note" column="note" />
+		<association property="customer" javaType="cn.com.mybatis.po.Customer"
+		select="findCustomerById" column="cus_id"
+		 />
+	</resultMap>
+
+	<select id="findBatchUserLazyLoading" resultMap="BatchUserLazyLoadingResultMap">
+		select * from
+		batch
+	</select>
+	
+	<!-- 多对多映射，要用association和collection -->
+	<resultMap type="customer" id="resultMapManyByMany">
+		<id property="cus_id" column="cus_id" />
+		<result property="username" column="username" />
+		<result property="acno" column="acno" />
+		<result property="gender" column="gender" />
+		<result property="phone" column="phone" />
+		<collection property="batchList" ofType="cn.com.mybatis.po.Batch">
+			<id property="batch_id" column="batch_id" />
+			<result property="cus_id" column="cus_id" />
+			<result property="number" column="number" />
+			<result property="createtime" column="createtime" />
+			<result property="note" column="note" />
+			<collection property="batchDetailList" ofType="cn.com.mybatis.po.BatchDetail">
+				<id property="id" column="id" />
+				<result property="batch_id" column="batch_id" />
+				<result property="product_id" column="product_id" />
+				<result property="product_num" column="product_num" />
+				<association property="finacialProduct"
+					javaType="cn.com.mybatis.po.FinacialProduct">
+					<id property="id" column="id" />
+					<result property="name" column="name" />
+					<result property="price" column="price" />
+					<result property="detail" column="detail" />
+					<result property="imgpath" column="imgpath" />
+					<result property="invattime" column="invattime" />
+				</association>
+			</collection>
+		</collection>
+	</resultMap>
+	<select id="selectManyByMany" resultMap="resultMapManyByMany">
+		SELECT
+		batch.*,
+		customer.username,
+		customer.acno,
+		batchdetail.product_id,
+		batchdetail.product_num,
+		finacial_products.`name`,
+		finacial_products.detail,
+		finacial_products.price
+		FROM
+		batch,
+		customer,
+		batchdetail,
+		finacial_products
+		WHERE
+		batch.cus_id=customer.cus_id
+		AND
+		batch.batch_id=batchdetail.batch_id
+		and
+		finacial_products.product_id=batchdetail.product_id
+	</select>
+
+	<!-- 一对多映射：只能用resultMap -->
+	<resultMap id="resultMapOneByMany" type="cn.com.mybatis.po.BatchItems"
+		extends="resultMapBatch">
+		<!-- <id property="batch_id" column="batch_id" /> <result property="cus_id" 
+			column="cus_id" /> <result property="number" column="number" /> <result property="createtime" 
+			column="createtime" /> <result property="note" column="note" /> <association 
+			property="customer" javaType="cn.com.mybatis.po.Customer"> <id column="cus_id" 
+			property="cus_id" /> <result property="username" column="username" /> <result 
+			property="acno" column="acno" /> <result property="phone" column="phone" 
+			/> </association> -->
+		<collection property="batchdetail" ofType="cn.com.mybatis.po.BatchDetail">
+			<id property="id" column="id" />
+			<result property="batch_id" column="batch_id" />
+			<result property="product_id" column="product_id" />
+			<result property="product_num" column="product_num" />
+		</collection>
+	</resultMap>
+
+	<select id="selectOneByMany" resultMap="resultMapOneByMany">
+		SELECT
+		batch.*,
+		customer.username,
+		customer.acno,
+		batchdetail.product_id,
+		batchdetail.product_num
+		FROM
+		batch,
+		customer,
+		batchdetail
+		WHERE
+		batch.cus_id=customer.cus_id
+		AND
+		batch.batch_id=batchdetail.batch_id
+	</select>
+
+	<resultMap id="resultMapBatch" type="cn.com.mybatis.po.BatchItems">
+		<id property="batch_id" column="batch_id" />
+		<result property="cus_id" column="cus_id" />
+		<result property="number" column="number" />
+		<result property="createtime" column="createtime" />
+		<result property="note" column="note" />
+		<association property="customer" javaType="cn.com.mybatis.po.Customer">
+			<id column="cus_id" property="cus_id" />
+			<result property="username" column="username" />
+			<result property="acno" column="acno" />
+			<result property="phone" column="phone" />
+		</association>
+	</resultMap>
+	<!-- 一对一映射，通过resultMap -->
+	<select id="selectOneByOneByResultMap" resultMap="resultMapBatch">
+		SELECT
+		batch.*,
+		customer.username,
+		customer.acno
+		FROM
+		batch,
+		customer
+		WHERE
+		batch.cus_id=customer.cus_id
+	</select>
+
+	<!-- 一对一映射，通过resultType -->
+	<select id="selectOneByOne" resultType="batchInfo">
+		SELECT
+		batch.*,
+		customer.username,
+		customer.acno
+		FROM
+		batch,
+		customer
+		WHERE
+		batch.cus_id=customer.cus_id
+	</select>
+</mapper>
